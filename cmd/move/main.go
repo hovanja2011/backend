@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"github.com/hovanja2011/move/internal/config"
 	"github.com/hovanja2011/move/internal/storage/postgresql"
 )
@@ -32,6 +34,13 @@ func main() {
 	}
 
 	_ = storage
+
+	router := chi.NewRouter()
+
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.URLFormat)
 }
 
 func setupLogger(env string) *slog.Logger {
