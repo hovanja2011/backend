@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/go-chi/chi"
 	"github.com/hovanja2011/move/internal/config"
 	"github.com/hovanja2011/move/internal/storage/postgresql"
 )
@@ -26,14 +25,13 @@ func main() {
 	log.Info("starting move", slog.String("env", cfg.Env))
 	log.Debug("debug messanger are enabled")
 
-	dbpool, err := postgresql.New(cfg.Storage.Path)
+	storage, err := postgresql.New(cfg.Storage.Path)
 	if err != nil {
 		log.Error("failed to init storage", err)
 		os.Exit(1)
 	}
 
-	dbpool.SaveDrive(123, "from", "to")
-	_ = chi.NewRouter()
+	_ = storage
 }
 
 func setupLogger(env string) *slog.Logger {
