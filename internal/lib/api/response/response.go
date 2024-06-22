@@ -37,8 +37,10 @@ func ValidationErrors(errs validator.ValidationErrors) Response {
 		switch err.ActualTag() {
 		case "required":
 			errMsgs = append(errMsgs, fmt.Sprintf("field %s is a required field", err.Field()))
-		case "phone":
-			errMsgs = append(errMsgs, fmt.Sprintf("field %s is a required field", err.Field()))
+		case "adress":
+			errMsgs = append(errMsgs, fmt.Sprintf("field %s is not a valid adress", err.Field()))
+		case "ident":
+			errMsgs = append(errMsgs, fmt.Sprintf("field %s is not a valid identificator", err.Field()))
 		default:
 			errMsgs = append(errMsgs, fmt.Sprintf("field %s is not valid", err.Field()))
 		}

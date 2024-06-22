@@ -1,19 +1,25 @@
 package save
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator"
+
 	resp "github.com/hovanja2011/move/internal/lib/api/response"
-	sl "github.com/hovanja2011/move/internal/lib/logger"
+
+	sl "github.com/hovanja2011/move/internal/lib/logger/sl"
+	"github.com/hovanja2011/move/internal/storage"
 )
 
 type Request struct {
-	driverPhone string `json:"driverPhone" validate:"required, phone"`
-	driverName  string `json:"driverName"  validate:"required, name"`
+	idDriver int64  `json:"idDriver" validate:"required, ident"`
+	sFrom    string `json:"sFrom" validate:"required, adress"`
+	sTo      string `json:"sTo" validate:"required, adress"`
 }
 
 type Response struct {
@@ -21,13 +27,13 @@ type Response struct {
 	Error string `json:"error,omitempty"`
 }
 
-type DriverCreator interface {
-	CreateDriver(driverPhone string, driverName string) error
+type DriveCreator interface {
+	CreateDrive(idDriver int64, sFrom string, sTo string) error
 }
 
-func New(log *slog.Logger, driverCreator DriverCreator) http.HandlerFunc {
+func New(log *slog.Logger, driveCreator DriveCreator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.url.save.new"
+		const op = "handlers.url.save.New"
 
 		log = log.With(
 			slog.String("op", op),
@@ -57,5 +63,13 @@ func New(log *slog.Logger, driverCreator DriverCreator) http.HandlerFunc {
 			return
 		}
 
+		err = driveCreator.CreateDrive(req.idDriver, req.sFrom, req.sTo)
+		if errors.Is(err, storage.ErrDriverNotFound) {
+			log.Info("driver not found", slog.String("idDriver", fmt.Sprint(req.idDriver)))
+
+			render.JSON(w, r, resp.Error("Driver is not exist"))
+
+			return
+		}
 	}
 }

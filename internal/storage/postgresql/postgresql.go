@@ -22,12 +22,21 @@ func New(storagePath string) (*Storage, error) {
 	// defer db.Close()
 
 	_, err = db.Exec(`
+	CREATE TABLE IF NOT EXISTS drive(
+		id INTEGER PRIMARY KEY,
+		idDriver INTEGER NOT NULL REFERENCES driver(id),
+		sFrom TEXT NOT NULL,
+		sTo TEXT NOT NULL
+	);
+	CREATE INDEX IF NOT EXISTS idx_id ON drive(id);
+
 	CREATE TABLE IF NOT EXISTS driver(
 		id INTEGER PRIMARY KEY,
-		sPhone TEXT NOT NULL UNIQUE,
-		sName TEXT NOT NULL
+		sName TEXT NOT NULL,
+		sPhone TEXT NOT NULL
 	);
 	CREATE INDEX IF NOT EXISTS idx_sPhone ON driver(sPhone);
+
 	`)
 
 	if err != nil {
@@ -37,11 +46,11 @@ func New(storagePath string) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (s *Storage) CreateDriver(driverPhone string, driverName string) error {
-	const op = "storage.postgresql.createdriver"
+func (s *Storage) CreateDrive(idDriver int64, sFrom string, sTo string) error {
+	const op = "storage.postgresql.CreateDrive"
 
 	// ToDo: узнать, ппочему id не добавляется самостоятельно и сделать так, чтобы id подставлялся автоматически
-	_, err := s.db.Exec("INSERT INTO driver(id, sPhone, sName) VALUES (1, $1, $2);", driverPhone, driverName)
+	_, err := s.db.Exec("INSERT INTO drive(id, idDriver, sFrom, sTo) VALUES (1, $1, $2, $3);", idDriver, sFrom, sTo)
 
 	if err != nil {
 		return fmt.Errorf("%s: error while creating : %w", op, err)
@@ -50,17 +59,17 @@ func (s *Storage) CreateDriver(driverPhone string, driverName string) error {
 	return nil
 }
 
-func (s *Storage) GetDriver(driverPhone string) (string, error) {
-	const op = "storage.postgres.getdriver"
+func (s *Storage) GetDriverByDrive(idDrive int64) (int64, error) {
+	const op = "storage.postgres.GetDriverByDrive"
 
-	var driverName string
-	err := s.db.QueryRow("SELECT sName FROM driver WHERE sPhone = $1", driverPhone).Scan(&driverName)
+	var idDriver int64
+	err := s.db.QueryRow("SELECT idDriver FROM drive WHERE id = $1", idDrive).Scan(&idDriver)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return "", fmt.Errorf("%s : error while getting driver : %w", op, pgx.ErrNoRows)
+			return -1, fmt.Errorf("%s : error while getting driver : %w", op, pgx.ErrNoRows)
 		}
-		return "", fmt.Errorf("%s : %w", op, err)
+		return -1, fmt.Errorf("%s : %w", op, err)
 	}
 
-	return driverName, nil
+	return idDriver, nil
 }
